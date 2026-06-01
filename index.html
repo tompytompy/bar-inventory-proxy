@@ -576,7 +576,7 @@ if(ST.cid && ST.csec) {
   btn.disabled = true;
   document.getElementById('c-cid').value = ST.cid;
   document.getElementById('c-csec').value = ST.csec;
-  document.getElementById('c-proxy').value = savedProxy;
+  document.getElementById('c-proxy').value = PROXY;
   bootApp().catch(function(e){
     btn.textContent = 'Connect to Storyous';
     btn.disabled = false;
