@@ -570,9 +570,7 @@ var ST = {
 // ═══════════════════════════════════════════
 document.getElementById('count-date').value = new Date().toISOString().split('T')[0];
 
-var savedProxy = localStorage.getItem('bi_proxy') || '';
-if(savedProxy) PROXY = savedProxy;
-if(ST.cid && ST.csec && savedProxy) {
+if(ST.cid && ST.csec) {
   var btn = document.getElementById('c-btn');
   btn.innerHTML = '<span class="spinner"></span>';
   btn.disabled = true;
@@ -590,13 +588,15 @@ if(ST.cid && ST.csec && savedProxy) {
 // AUTH
 // ═══════════════════════════════════════════
 // ── Proxy server ──
-var PROXY = localStorage.getItem('bi_proxy') || 'https://bar-inventory-proxy.onrender.com';
+var PROXY = 'https://bar-inventory-proxy.onrender.com';
+try { var _lsp = localStorage.getItem('bi_proxy'); if(_lsp) PROXY = _lsp; } catch(e) {}
 
 function apiGet(path) {
   if(!PROXY) return Promise.reject(new Error('No proxy URL — enter it in Settings'));
   var sep = path.includes('?') ? '&' : '?';
   var url = PROXY.replace(/\/$/, '') + '/storyous/' + path.replace(/^\//, '')
     + sep + 'cid=' + encodeURIComponent(ST.cid) + '&csec=' + encodeURIComponent(ST.csec);
+  console.log('API GET:', url.replace(ST.csec, '***'));
   return fetch(url).then(function(r){
     if(!r.ok) return r.json().then(function(e){ throw new Error(e.error || 'API error ' + r.status); }).catch(function(){ throw new Error('API error ' + r.status); });
     return r.json();
