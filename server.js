@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -9,10 +10,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Serve the app ──
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  const filePath = path.join(__dirname, 'index.html');
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send('index.html not found. Make sure it is in the same folder as server.js');
+  }
+  res.sendFile(filePath);
 });
 
-// ── Auth token cache (per client_id) ──
+// ── Auth token cache ──
 const tokenCache = {};
 
 async function getToken(clientId, clientSecret) {
@@ -34,17 +39,17 @@ async function getToken(clientId, clientSecret) {
   return data.access_token;
 }
 
-// ── Proxy any Storyous GET ──
+// ── Proxy GET ──
 app.get('/storyous/*', async (req, res) => {
   const { cid, csec } = req.query;
   if (!cid || !csec) return res.status(400).json({ error: 'Missing cid or csec' });
   try {
     const token = await getToken(cid, csec);
-    const path = req.params[0];
+    const apiPath = req.params[0];
     const qs = Object.entries(req.query)
       .filter(([k]) => k !== 'cid' && k !== 'csec')
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
-    const url = `https://api.storyous.com/${path}${qs ? '?' + qs : ''}`;
+    const url = `https://api.storyous.com/${apiPath}${qs ? '?' + qs : ''}`;
     const apiRes = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
     const text = await apiRes.text();
     res.status(apiRes.status).set('Content-Type', 'application/json').send(text);
@@ -53,7 +58,7 @@ app.get('/storyous/*', async (req, res) => {
   }
 });
 
-// ── Proxy any Storyous POST ──
+// ── Proxy POST ──
 app.post('/storyous/*', async (req, res) => {
   const { cid, csec } = req.query;
   if (!cid || !csec) return res.status(400).json({ error: 'Missing cid or csec' });
@@ -74,5 +79,11 @@ app.post('/storyous/*', async (req, res) => {
   }
 });
 
+// ── Debug route ──
+app.get('/debug', (req, res) => {
+  const files = fs.readdirSync(__dirname);
+  res.json({ files, dirname: __dirname });
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Bar Inventory running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Running on port ${PORT}`));
