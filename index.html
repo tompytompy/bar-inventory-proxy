@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Bar Inventory</title>
+<style>
+/* ─── TOKENS ─── */
+:root {
+  --black: #0a0a0a;
+  --white: #ffffff;
+  --gray-50: #f9f9f7;
+  --gray-100: #f0efeb;
+  --gray-200: #e2e1db;
+  --gray-400: #a8a69e;
+  --gray-600: #6b6963;
+  --gray-800: #2d2c29;
+  --amber: #d4820a;
+  --amber-light: #fef3dc;
+  --red: #c0392b;
+  --red-light: #fdf0ee;
+  --green: #1e7e4a;
+  --green-light: #eaf5ee;
+  --blue: #1a5fa8;
+  --blue-light: #eaf1fb;
+  --font: 'Helvetica Neue', -apple-system, BlinkMacSystemFont, sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-h: 56px;
+  --tab-h: 60px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--gray-50);
+  color: var(--black);
+  font-size: 15px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── LAYOUT ─── */
+.app-shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.screen { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+.screen.active { display: flex; flex-direction: column; }
+.screen-content { padding: 16px; padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 16px); flex: 1; }
+
+/* ─── TOPBAR ─── */
+.topbar {
+  height: var(--nav-h);
+  background: var(--black);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  justify-content: space-between;
+  flex-shrink: 0;
+  padding-top: env(safe-area-inset-top, 0);
+}
+.topbar-title { font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+.topbar-right { font-size: 13px; color: rgba(255,255,255,.5); }
+.topbar-btn {
+  background: none; border: none; color: rgba(255,255,255,.7);
+  font-size: 13px; cursor: pointer; padding: 6px 10px;
+  border-radius: 6px; font-family: var(--font);
+}
+.topbar-btn:hover { background: rgba(255,255,255,.1); }
+
+/* ─── TAB BAR ─── */
+.tabbar {
+  height: calc(var(--tab-h) + var(--safe-bottom));
+  background: var(--white);
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  flex-shrink: 0;
+  padding-bottom: var(--safe-bottom);
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  gap: 3px;
+  border: none;
+  background: none;
+  font-family: var(--font);
+  color: var(--gray-400);
+  transition: color .15s;
+  padding: 8px 4px;
+}
+.tab-item.active { color: var(--black); }
+.tab-icon { font-size: 22px; line-height: 1; }
+.tab-label { font-size: 10px; font-weight: 500; letter-spacing: .02em; }
+
+/* ─── CARDS ─── */
+.card {
+  background: var(--white);
+  border-radius: 14px;
+  border: 1px solid var(--gray-200);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray-600); }
+.card-body { padding: 14px 16px; }
+
+/* ─── FORMS ─── */
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.label { font-size: 12px; font-weight: 500; color: var(--gray-600); margin-bottom: 5px; letter-spacing: .01em; }
+input[type=text], input[type=number], input[type=password], input[type=email], input[type=date], select, textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: var(--font);
+  background: var(--white);
+  color: var(--black);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--black); }
+input:disabled, select:disabled { background: var(--gray-100); color: var(--gray-400); }
+input[type=number] { -moz-appearance: textfield; }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+/* ─── BUTTONS ─── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 15px; font-weight: 500; font-family: var(--font);
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  color: var(--black);
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+  white-space: nowrap;
+  -webkit-appearance: none;
+}
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn-full { width: 100%; }
+.btn-primary { background: var(--black); color: var(--white); border-color: var(--black); }
+.btn-amber { background: var(--amber); color: var(--white); border-color: var(--amber); }
+.btn-red { background: var(--red); color: var(--white); border-color: var(--red); }
+.btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 8px; }
+.btn-ghost { background: none; border-color: transparent; color: var(--gray-600); padding: 8px; }
+.btn:disabled { opacity: .4; pointer-events: none; }
+
+/* ─── GRID ─── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+/* ─── BADGES ─── */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-amber { background: var(--amber-light); color: var(--amber); }
+.badge-red { background: var(--red-light); color: var(--red); }
+.badge-gray { background: var(--gray-100); color: var(--gray-600); }
+.badge-blue { background: var(--blue-light); color: var(--blue); }
+
+/* ─── ALERTS ─── */
+.alert { padding: 12px 14px; border-radius: 10px; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
+.alert-red { background: var(--red-light); color: var(--red); }
+.alert-green { background: var(--green-light); color: var(--green); }
+.alert-amber { background: var(--amber-light); color: var(--amber); }
+.alert-blue { background: var(--blue-light); color: var(--blue); }
+
+/* ─── DIVIDER ─── */
+.divider { height: 1px; background: var(--gray-100); margin: 14px 0; }
+
+/* ─── SPINNER ─── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: var(--white);
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+  display: inline-block;
+}
+.spinner-dark { border-color: rgba(0,0,0,.15); border-top-color: var(--black); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── MISC ─── */
+.muted { color: var(--gray-600); font-size: 13px; }
+.hint { font-size: 12px; color: var(--gray-400); margin-top: 5px; }
+.error-hint { font-size: 12px; color: var(--red); margin-top: 5px; font-weight: 500; }
+.empty { text-align: center; padding: 48px 24px; color: var(--gray-400); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty p { font-size: 14px; }
+.flex { display: flex; align-items: center; }
+.flex-between { display: flex; align-items: center; justify-content: space-between; }
+.gap8 { gap: 8px; }
+.gap12 { gap: 12px; }
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.mt16 { margin-top: 16px; }
+.fw600 { font-weight: 600; }
+.fs13 { font-size: 13px; }
+.fs12 { font-size: 12px; }
+
+/* ─── CATEGORY CHIPS ─── */
+.chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  padding: 5px 13px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 20px;
+  font-size: 12px; font-weight: 500;
+  font-family: var(--font);
+  background: var(--white);
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
+}
+.chip.on { background: var(--black); color: var(--white); border-color: var(--black); }
+
+/* ─── PRODUCT ROW ─── */
+.prod-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.prod-row:last-child { border-bottom: none; }
+.prod-row-info { flex: 1; min-width: 0; }
+.prod-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prod-meta { font-size: 12px; color: var(--gray-400); margin-top: 1px; }
+.prod-expand-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%; border: 1.5px solid var(--gray-200);
+  background: none; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; flex-shrink: 0; transition: all .15s;
+  font-family: var(--font);
+}
+.prod-expand-btn.open { background: var(--black); border-color: var(--black); color: var(--white); }
+.prod-config { background: var(--gray-50); padding: 14px 16px; border-top: 1px solid var(--gray-100); }
+
+/* ─── COUNT CARD ─── */
+.count-card {
+  background: var(--white);
+  border: 1.5px solid var(--gray-200);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.count-card.error { border-color: var(--red); }
+.count-card.has-value { border-color: var(--green); }
+.count-header { padding: 13px 16px; }
+.count-name { font-size: 15px; font-weight: 600; }
+.count-meta { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+.count-total { font-size: 22px; font-weight: 700; color: var(--black); letter-spacing: -.02em; }
+.count-inputs { padding: 0 16px 14px; display: grid; gap: 10px; }
+
+/* ─── REPORT ROW ─── */
+.report-row {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--gray-100);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+.report-row:last-child { border-bottom: none; }
+.report-name { font-size: 14px; font-weight: 500; }
+.report-meta { font-size: 12px; color: var(--gray-400); }
+.report-val { font-size: 17px; font-weight: 700; letter-spacing: -.01em; text-align: right; }
+
+/* ─── CONNECT SCREEN ─── */
+.connect-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  background: var(--black);
+}
+.connect-logo {
+  width: 72px; height: 72px;
+  background: rgba(255,255,255,.08);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  margin-bottom: 24px;
+}
+.connect-title { font-size: 26px; font-weight: 700; color: var(--white); text-align: center; margin-bottom: 6px; letter-spacing: -.02em; }
+.connect-sub { color: rgba(255,255,255,.45); font-size: 14px; text-align: center; margin-bottom: 36px; line-height: 1.6; max-width: 320px; }
+.connect-box { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; }
+.connect-box .label { color: rgba(255,255,255,.5); }
+.connect-box input {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.15);
+  color: var(--white);
+}
+.connect-box input::placeholder { color: rgba(255,255,255,.25); }
+.connect-box input:focus { border-color: rgba(255,255,255,.4); }
+.connect-note { font-size: 12px; color: rgba(255,255,255,.3); text-align: center; margin-top: 20px; line-height: 1.7; max-width: 320px; }
+
+/* ─── OVERLAY ─── */
+.overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.6);
+  display: none; align-items: flex-end; justify-content: center;
+  padding-bottom: var(--safe-bottom);
+}
+.overlay.open { display: flex; }
+.overlay-sheet {
+  background: var(--white);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px;
+  width: 100%; max-width: 500px;
+  text-align: center;
+}
+.overlay-icon { font-size: 52px; margin-bottom: 12px; }
+.overlay-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.overlay-msg { color: var(--gray-600); font-size: 14px; margin-bottom: 20px; line-height: 1.6; }
+
+/* ─── SEARCH ─── */
+.search-wrap { position: relative; margin-bottom: 12px; }
+.search-wrap input { padding-left: 36px; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 15px; color: var(--gray-400); pointer-events: none; }
+
+/* ─── SECTION HEADER ─── */
+.section-header {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--gray-400);
+  padding: 16px 0 8px;
+}
+
+/* ─── STAT CARDS ─── */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 14px; }
+.stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--gray-400); margin-bottom: 4px; }
+.stat-val { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+
+/* ─── SETTINGS ─── */
+.setting-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--gray-100);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 15px; }
+.setting-value { font-size: 13px; color: var(--gray-400); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     CONNECT SCREEN
+══════════════════════════════════════════════ -->
+<div id="screen-connect" class="app-shell" style="display:flex">
+  <div class="connect-screen screen active" style="overflow-y:auto">
+    <div class="connect-logo">⚖️</div>
+    <div class="connect-title">Bar Inventory</div>
+    <div class="connect-sub">Accurate weighted inventory that syncs directly to your Storyous account</div>
+    <div class="connect-box">
+      <div class="field">
+        <div class="label">Client ID</div>
+        <input type="text" id="c-cid" placeholder="Your Storyous client_id" autocomplete="off" autocapitalize="none">
+      </div>
+      <div class="field">
+        <div class="label">Client Secret</div>
+        <input type="password" id="c-csec" placeholder="Your client_secret" autocomplete="off">
+      </div>
+      <div class="divider" style="border-top:1px solid rgba(255,255,255,.1);margin:16px 0"></div>
+      <div class="field">
+        <div class="label" style="color:rgba(255,255,255,.4);font-size:11px">PROXY SERVER URL</div>
+        <input type="text" id="c-proxy" placeholder="https://your-replit-url.repl.co" autocomplete="off" autocapitalize="none" autocorrect="off">
+        <div style="font-size:11px;color:rgba(255,255,255,.25);margin-top:5px">Your Replit proxy server URL. See setup instructions below.</div>
+      </div>
+      <div id="c-error" class="alert alert-red" style="display:none;margin-top:12px"></div>
+      <button class="btn btn-primary btn-full mt12" onclick="connect()" id="c-btn" style="font-size:16px;padding:14px">Connect to Storyous</button>
+    </div>
+    <div class="connect-note">
+      Don't have credentials yet? Contact Storyous support<br>and request API access as a merchant.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN APP SHELL
+══════════════════════════════════════════════ -->
+<div id="app-shell" class="app-shell" style="display:none">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Products</div>
+    <div id="topbar-right"></div>
+  </div>
+
+  <!-- SCREENS -->
+
+  <!-- PRODUCTS -->
+  <div class="screen" id="screen-products">
+    <div class="screen-content">
+      <div class="search-wrap">
+        <div class="search-icon">🔍</div>
+        <input type="text" id="prod-search" placeholder="Search products..." oninput="renderProducts()">
+      </div>
+      <div class="chip-row" id="prod-cats" style="margin-bottom:14px"></div>
+      <div id="prod-list"></div>
+    </div>
+  </div>
+
+  <!-- COUNT -->
+  <div class="screen" id="screen-count">
+    <div class="screen-content">
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          <div class="flex-between gap8">
+            <div class="field" style="flex:1;margin:0">
+              <div class="label">Count date</div>
+              <input type="date" id="count-date">
+            </div>
+            <div style="padding-top:20px">
+              <button class="btn btn-sm" onclick="goReport()">Report →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chip-row" id="count-cats" style="margin-bottom:14px"></div>
+      <div id="count-list"></div>
+    </div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="screen" id="screen-report">
+    <div class="screen-content">
+      <div id="report-content"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="screen-content">
+      <div class="section-header">Account</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-label">Merchant</div>
+          <div class="setting-value" id="s-merchant">—</div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-label">Stock</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <select id="s-stock" onchange="changeStock()" style="width:160px;font-size:13px;padding:6px 10px"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">Credentials</div>
+      <div class="card">
+        <div class="card-body">
+          <div class="field">
+            <div class="label">Client ID</div>
+            <input type="text" id="s-cid" autocapitalize="none">
+          </div>
+          <div class="field">
+            <div class="label">Client Secret</div>
+            <input type="password" id="s-csec">
+          </div>
+          <div class="field">
+            <div class="label">Proxy Server URL</div>
+            <input type="text" id="s-proxy" autocapitalize="none" autocorrect="off">
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="reconnect()" id="s-reconnect-btn">Save & reconnect</button>
+          <span id="s-reconnect-status" style="font-size:13px;margin-left:10px"></span>
+        </div>
+      </div>
+
+      <div class="section-header">Data</div>
+      <div class="card">
+        <div class="card-body">
+          <button class="btn btn-sm btn-full" onclick="syncItems()">↻ Sync products from Storyous</button>
+        </div>
+      </div>
+
+      <div class="section-header">About</div>
+      <div class="card">
+        <div class="setting-row">
+          <div class="setting-label">Version</div>
+          <div class="setting-value">1.0.0</div>
+        </div>
+        <div class="setting-row" style="border:none">
+          <div class="setting-label fs13" style="color:var(--gray-400)">Weighted inventory for Storyous merchants</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;text-align:center">
+        <button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tabbar">
+    <button class="tab-item active" onclick="goTo('products')" id="tab-products">
+      <div class="tab-icon">📦</div>
+      <div class="tab-label">Products</div>
+    </button>
+    <button class="tab-item" onclick="goTo('count')" id="tab-count">
+      <div class="tab-icon">⚖️</div>
+      <div class="tab-label">Count</div>
+    </button>
+    <button class="tab-item" onclick="goTo('report')" id="tab-report">
+      <div class="tab-icon">📊</div>
+      <div class="tab-label">Report</div>
+    </button>
+    <button class="tab-item" onclick="goTo('settings')" id="tab-settings">
+      <div class="tab-icon">⚙️</div>
+      <div class="tab-label">Settings</div>
+    </button>
+  </div>
+</div>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="overlay-sheet">
+    <div class="overlay-icon" id="ov-icon">✅</div>
+    <div class="overlay-title" id="ov-title">Done!</div>
+    <div class="overlay-msg" id="ov-msg"></div>
+    <button class="btn btn-primary btn-full" onclick="closeOverlay()">Close</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+var ST = {
+  cid: localStorage.getItem('bi_cid') || '',
+  csec: localStorage.getItem('bi_csec') || '',
+  mid: localStorage.getItem('bi_mid') || '5720ba9ccccf5f0e000acf41',
+  sid: localStorage.getItem('bi_sid') || '',
+  token: null,
+  tokenExpiry: null,
+  merchant: null,
+  stocks: [],
+  items: [],
+  config: JSON.parse(localStorage.getItem('bi_cfg') || '{}'),
+  inv: {},
+  activeCat: null,
+  selCats: null,
+  prodSelCats: null,
+  expandedProd: null,
+  currentTab: 'products'
+};
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+document.getElementById('count-date').value = new Date().toISOString().split('T')[0];
+
+var savedProxy = localStorage.getItem('bi_proxy') || '';
+if(savedProxy) PROXY = savedProxy;
+if(ST.cid && ST.csec && savedProxy) {
+  var btn = document.getElementById('c-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  document.getElementById('c-cid').value = ST.cid;
+  document.getElementById('c-csec').value = ST.csec;
+  document.getElementById('c-proxy').value = savedProxy;
+  bootApp().catch(function(e){
+    btn.textContent = 'Connect to Storyous';
+    btn.disabled = false;
+    showConnectErr(e.message);
+  });
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+// ── Proxy server ──
+var PROXY = localStorage.getItem('bi_proxy') || 'https://bar-inventory-proxy.onrender.com';
+
+function apiGet(path) {
+  if(!PROXY) return Promise.reject(new Error('No proxy URL — enter it in Settings'));
+  var sep = path.includes('?') ? '&' : '?';
+  var url = PROXY.replace(/\/$/, '') + '/storyous/' + path.replace(/^\//, '')
+    + sep + 'cid=' + encodeURIComponent(ST.cid) + '&csec=' + encodeURIComponent(ST.csec);
+  return fetch(url).then(function(r){
+    if(!r.ok) return r.json().then(function(e){ throw new Error(e.error || 'API error ' + r.status); }).catch(function(){ throw new Error('API error ' + r.status); });
+    return r.json();
+  });
+}
+
+function apiPost(path, body) {
+  if(!PROXY) return Promise.reject(new Error('No proxy URL — enter it in Settings'));
+  var url = PROXY.replace(/\/$/, '') + '/storyous/' + path.replace(/^\//, '')
+    + '?cid=' + encodeURIComponent(ST.cid) + '&csec=' + encodeURIComponent(ST.csec);
+  return fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body)
+  }).then(function(r){
+    if(r.status === 204) return {};
+    if(!r.ok) return r.json().then(function(e){ throw new Error(e.error || 'API error ' + r.status); }).catch(function(){ throw new Error('API error ' + r.status); });
+    return r.json();
+  });
+}
+
+function getToken() { return Promise.resolve('proxy'); }
+
+
+// ═══════════════════════════════════════════
+// CONNECT & BOOT
+// ═══════════════════════════════════════════
+function connect() {
+  ST.cid = document.getElementById('c-cid').value.trim();
+  ST.csec = document.getElementById('c-csec').value.trim();
+  var proxy = document.getElementById('c-proxy').value.trim();
+  if(!ST.cid || !ST.csec) { showConnectErr('Please enter your Client ID and Client Secret'); return; }
+  if(!proxy) { showConnectErr('Please enter your proxy server URL'); return; }
+  PROXY = proxy;
+  localStorage.setItem('bi_proxy', proxy);
+  var btn = document.getElementById('c-btn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+  document.getElementById('c-error').style.display = 'none';
+  ST.token = null;
+  bootApp().catch(function(e){
+    btn.innerHTML = 'Connect to Storyous';
+    btn.disabled = false;
+    showConnectErr(e.message);
+  });
+}
+
+function bootApp() {
+  return getToken()
+    .then(function(){ return apiGet('/merchants/5720ba9ccccf5f0e000acf41'); })
+    .catch(function(){ return {merchantId: ST.mid}; })
+    .then(function(m){
+      ST.merchant = m;
+      if(m.merchantId) { ST.mid = m.merchantId; localStorage.setItem('bi_mid', ST.mid); }
+      return apiGet('/stocks/' + ST.mid + '/stocks');
+    })
+    .then(function(d){
+      ST.stocks = d.data || [];
+      if(!ST.sid && ST.stocks.length) { ST.sid = ST.stocks[0].stockId; localStorage.setItem('bi_sid', ST.sid); }
+      localStorage.setItem('bi_cid', ST.cid);
+      localStorage.setItem('bi_csec', ST.csec);
+      return fetchAllItems();
+    })
+    .then(function(){
+      document.getElementById('screen-connect').style.display = 'none';
+      document.getElementById('app-shell').style.display = 'flex';
+      goTo('products');
+    });
+}
+
+function fetchAllItems() {
+  var all = [];
+  function page(url) {
+    return getToken().then(function(t){
+      return fetch(url, {headers:{'Authorization':'Bearer '+t}});
+    }).then(function(r){ return r.json(); }).then(function(d){
+      all = all.concat(d.data || []);
+      if(d.nextPage) return page(d.nextPage);
+    });
+  }
+  return page('https://api.storyous.com/stocks/' + ST.mid + '/stocks/' + ST.sid + '/items')
+    .then(function(){ ST.items = all; });
+}
+
+function showConnectErr(msg) {
+  var el = document.getElementById('c-error');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+// ═══════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════
+var TAB_TITLES = {products: 'Products', count: 'Count', report: 'Report', settings: 'Settings'};
+
+function goTo(tab) {
+  ST.currentTab = tab;
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.tab-item').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('screen-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('topbar-title').textContent = TAB_TITLES[tab];
+  setupTopbarRight(tab);
+  if(tab === 'products') renderProducts();
+  if(tab === 'count') renderCount();
+  if(tab === 'report') renderReport();
+  if(tab === 'settings') renderSettings();
+}
+
+function goReport() { goTo('report'); }
+
+function setupTopbarRight(tab) {
+  var el = document.getElementById('topbar-right');
+  if(tab === 'products') {
+    el.innerHTML = '<button class="topbar-btn" onclick="syncItems()">↻ Sync</button>';
+  } else { el.innerHTML = ''; }
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function allCats() {
+  var seen = {}, cats = [];
+  ST.items.forEach(function(it){ var c = it.categoryName||'Other'; if(!seen[c]){ seen[c]=1; cats.push(c); } });
+  return cats;
+}
+
+function useKg(item) {
+  var cfg = ST.config[item.itemId] || {};
+  return cfg.isKg !== undefined ? cfg.isKg : (item.measure==='kg' || (item.categoryName||'').toLowerCase().indexOf('beer')!==-1);
+}
+function wUnit(item) { return useKg(item) ? 'kg' : 'g'; }
+function toG(item, v) { return useKg(item) ? v*1000 : v; }
+function isLiquid(item) { return item.measure==='l'||item.measure==='L'||item.measure==='kg'||!!(ST.config[item.itemId]&&ST.config[item.itemId].vol); }
+
+function calcOpen(item) {
+  var cfg = ST.config[item.itemId]||{}, inv = ST.inv[item.itemId]||{};
+  if(!cfg.fullW||!cfg.emptyW||!inv.openW||!cfg.vol) return 0;
+  var fG=toG(item,cfg.fullW), eG=toG(item,cfg.emptyW), oG=toG(item,inv.openW);
+  var liq=fG-eG; if(liq<=0) return 0;
+  return Math.max(0,(oG-eG)/liq)*cfg.vol;
+}
+
+function calcTotal(item) {
+  var cfg = ST.config[item.itemId]||{}, inv = ST.inv[item.itemId]||{};
+  if(item.measure==='pc'||item.measure==='pcs') return inv.sealed!=null ? +inv.sealed : null;
+  if(!cfg.vol) return null;
+  return (+(inv.sealed||0))*cfg.vol + calcOpen(item);
+}
+
+function saveCfg() { localStorage.setItem('bi_cfg', JSON.stringify(ST.config)); }
+function setCfg(id,k,v) { if(!ST.config[id]) ST.config[id]={}; ST.config[id][k]=v; saveCfg(); }
+function setInv(id,k,v) {
+  if(!ST.inv[id]) ST.inv[id]={};
+  ST.inv[id][k] = k==='notes' ? v : (parseFloat(v)||0);
+  var item = ST.items.filter(function(i){ return i.itemId===id; })[0];
+  if(item) { var el=document.getElementById('cc-'+id); if(el) el.outerHTML=countCardHTML(item); }
+}
+
+// ═══════════════════════════════════════════
+// PRODUCTS
+// ═══════════════════════════════════════════
+function renderProdCats() {
+  var cats = allCats();
+  if(!ST.prodSelCats) ST.prodSelCats = new Set(cats);
+  var el = document.getElementById('prod-cats');
+  var allOn = cats.every(function(c){ return ST.prodSelCats.has(c); });
+  el.innerHTML = '<button class="chip'+(allOn?' on':'')+'" onclick="toggleAllProdCats()">All</button>'
+    + cats.map(function(c){ return '<button class="chip'+(ST.prodSelCats.has(c)?' on':'')+'" onclick="toggleProdCat(\''+esc(c)+'\')">'+c+'</button>'; }).join('');
+}
+
+function toggleAllProdCats() {
+  var cats=allCats(), allOn=cats.every(function(c){ return ST.prodSelCats.has(c); });
+  ST.prodSelCats = allOn ? new Set() : new Set(cats); renderProducts();
+}
+function toggleProdCat(cat) {
+  if(ST.prodSelCats.has(cat)) ST.prodSelCats.delete(cat); else ST.prodSelCats.add(cat); renderProducts();
+}
+
+function renderProducts() {
+  if(!ST.items.length) {
+    document.getElementById('prod-list').innerHTML = '<div class="empty"><div class="empty-icon">📦</div><p>No products yet.<br>Sync from Storyous to get started.</p></div>';
+    return;
+  }
+  if(!ST.prodSelCats) ST.prodSelCats = new Set(allCats());
+  renderProdCats();
+  var q = (document.getElementById('prod-search')||{}).value || '';
+  q = q.toLowerCase();
+  var filtered = ST.items.filter(function(it){
+    return it.name.toLowerCase().indexOf(q)!==-1 && ST.prodSelCats.has(it.categoryName||'Other');
+  });
+  if(!filtered.length) { document.getElementById('prod-list').innerHTML = '<div class="empty"><p>No products match.</p></div>'; return; }
+  var byCat={};
+  filtered.forEach(function(it){ var c=it.categoryName||'Other'; if(!byCat[c]) byCat[c]=[]; byCat[c].push(it); });
+  document.getElementById('prod-list').innerHTML = Object.keys(byCat).map(function(cat){
+    return '<div class="section-header">'+cat+'</div>'
+      + '<div class="card">'+byCat[cat].map(prodRowHTML).join('')+'</div>';
+  }).join('');
+}
+
+function prodRowHTML(item) {
+  var cfg=ST.config[item.itemId]||{}, liq=isLiquid(item), kg=useKg(item);
+  var isOpen = ST.expandedProd === item.itemId;
+  var cfgStatus = (liq && cfg.fullW && cfg.emptyW && cfg.vol) ? 'badge-green' : liq ? 'badge-amber' : 'badge-gray';
+  var cfgLabel = (liq && cfg.fullW && cfg.emptyW && cfg.vol) ? 'Configured' : liq ? 'Needs setup' : 'Piece';
+  var aw = (cfg.fullW && cfg.emptyW) ? (cfg.fullW - cfg.emptyW) : null;
+  var configHTML = '';
+  if(isOpen && liq) {
+    configHTML = '<div class="prod-config">'
+      + '<div class="g3" style="margin-bottom:10px">'
+      + '<div><div class="label">Full '+(kg?'keg':'bottle')+' ('+wUnit(item)+')</div><input type="number" step="'+(kg?'0.01':'1')+'" placeholder="'+(kg?'30':'1450')+'" value="'+(cfg.fullW||'')+'" oninput="setCfg(\''+item.itemId+'\',\'fullW\',+this.value);refreshProdRow(\''+item.itemId+'\')"></div>'
+      + '<div><div class="label">Empty '+(kg?'keg':'bottle')+' ('+wUnit(item)+')</div><input type="number" step="'+(kg?'0.01':'1')+'" placeholder="'+(kg?'10':'450')+'" value="'+(cfg.emptyW||'')+'" oninput="setCfg(\''+item.itemId+'\',\'emptyW\',+this.value);refreshProdRow(\''+item.itemId+'\')"></div>'
+      + '<div><div class="label">Volume ('+item.measure+')</div><input type="number" step="0.001" placeholder="'+(kg?'30':'1')+'" value="'+(cfg.vol||'')+'" oninput="setCfg(\''+item.itemId+'\',\'vol\',+this.value);refreshProdRow(\''+item.itemId+'\')"></div>'
+      + '</div>'
+      + (aw ? '<div class="hint">Liquid weight: '+(kg?aw.toFixed(2)+'kg':aw.toFixed(0)+'g')+'</div>' : '')
+      + '</div>';
+  }
+  return '<div id="pr-'+item.itemId+'">'
+    + '<div class="prod-row">'
+    + '<div class="prod-row-info"><div class="prod-name">'+item.name+'</div><div class="prod-meta">'+item.measure+'</div></div>'
+    + '<span class="badge '+cfgStatus+'">'+cfgLabel+'</span>'
+    + (liq ? '<button class="prod-expand-btn'+(isOpen?' open':'')+'" onclick="toggleProd(\''+item.itemId+'\')">'+(isOpen?'−':'+')+'</button>' : '')
+    + '</div>'
+    + configHTML
+    + '</div>';
+}
+
+function toggleProd(id) {
+  ST.expandedProd = ST.expandedProd === id ? null : id;
+  renderProducts();
+}
+
+function refreshProdRow(id) {
+  var item = ST.items.filter(function(i){ return i.itemId===id; })[0];
+  if(!item) return;
+  var el = document.getElementById('pr-'+id);
+  if(el) el.outerHTML = prodRowHTML(item);
+}
+
+// ═══════════════════════════════════════════
+// COUNT
+// ═══════════════════════════════════════════
+function renderCountCats() {
+  var cats=allCats();
+  if(!ST.activeCat||cats.indexOf(ST.activeCat)===-1) ST.activeCat=cats[0];
+  var el=document.getElementById('count-cats');
+  el.innerHTML = cats.map(function(c){
+    return '<button class="chip'+(c===ST.activeCat?' on':'')+'" onclick="setCountCat(\''+esc(c)+'\')">'+c+'</button>';
+  }).join('');
+}
+
+function setCountCat(cat) {
+  ST.activeCat=cat;
+  renderCountCats();
+  renderCountList();
+}
+
+function renderCount() {
+  if(!ST.items.length) {
+    document.getElementById('count-list').innerHTML = '<div class="empty"><div class="empty-icon">⚖️</div><p>No products loaded.<br>Go to Products → Sync.</p></div>';
+    return;
+  }
+  renderCountCats();
+  renderCountList();
+}
+
+function renderCountList() {
+  var items=ST.items.filter(function(it){ return (it.categoryName||'Other')===ST.activeCat; });
+  document.getElementById('count-list').innerHTML = items.map(countCardHTML).join('');
+}
+
+function countCardHTML(item) {
+  var cfg=ST.config[item.itemId]||{}, inv=ST.inv[item.itemId]||{};
+  var liq=isLiquid(item), kg=useKg(item);
+  var hasConfig=cfg.fullW&&cfg.emptyW&&cfg.vol;
+  var openL=liq?calcOpen(item):0;
+  var total=calcTotal(item);
+  var inv_openW = inv.openW||0;
+  var oG=toG(item,inv_openW), eG=toG(item,cfg.emptyW||0), fG=toG(item,cfg.fullW||0);
+  var tooLight=hasConfig&&inv.openW&&oG<eG;
+  var tooHeavy=hasConfig&&inv.openW&&oG>fG;
+  var hasErr=tooLight||tooHeavy;
+  var hasVal=total!=null&&total>0;
+  var cls='count-card'+(hasErr?' error':hasVal?' has-value':'');
+  var totalStr=total!=null?(item.measure==='pc'||item.measure==='pcs'?total+' pc':total.toFixed(2)+item.measure):'';
+  var metaLine=liq
+    ?(hasConfig?'Full: '+cfg.fullW+wUnit(item)+'  Empty: '+cfg.emptyW+wUnit(item):'⚠ Set weights in Products')
+    :'Count pieces';
+  var hintHTML='';
+  if(tooLight) hintHTML='<div class="error-hint">⚠ Below empty '+(kg?'keg':'bottle')+' ('+cfg.emptyW+wUnit(item)+')</div>';
+  else if(tooHeavy) hintHTML='<div class="error-hint">⚠ Above full '+(kg?'keg':'bottle')+' ('+cfg.fullW+wUnit(item)+')</div>';
+  else if(openL>0) hintHTML='<div class="hint">'+openL.toFixed(2)+item.measure+' in open '+(kg?'keg':'bottle')+'</div>';
+  return '<div class="'+cls+'" id="cc-'+item.itemId+'">'
+    + '<div class="count-header flex-between">'
+    + '<div><div class="count-name">'+item.name+'</div><div class="count-meta">'+metaLine+'</div></div>'
+    + (totalStr?'<div class="count-total">'+totalStr+'</div>':'')
+    + '</div>'
+    + '<div class="count-inputs" style="grid-template-columns:'+(liq?'1fr 1fr 1fr':'1fr 1fr')+'">'
+    + '<div><div class="label">'+(liq?(kg?'Unopened kegs':'Sealed bottles'):'Pieces')+'</div>'
+    + '<input type="number" inputmode="decimal" min="0" step="1" placeholder="0" value="'+(inv.sealed||'')+'" onchange="setInv(\''+item.itemId+'\',\'sealed\',this.value)"></div>'
+    + (liq?'<div><div class="label">'+(kg?'Open keg (kg)':'Open bottle (g)')+'</div>'
+      +'<input type="number" inputmode="decimal" min="0" step="'+(kg?'0.01':'1')+'" placeholder="'+(hasConfig?'Weigh it':'—')+'" value="'+(inv.openW||'')+'" onchange="setInv(\''+item.itemId+'\',\'openW\',this.value)"'+(hasConfig?'':' disabled')+'>'
+      +hintHTML+'</div>':'')
+    + '<div><div class="label">Notes</div><input type="text" placeholder="Optional" value="'+(inv.notes||'')+'" onchange="setInv(\''+item.itemId+'\',\'notes\',this.value)"></div>'
+    + '</div></div>';
+}
+
+// ═══════════════════════════════════════════
+// REPORT
+// ═══════════════════════════════════════════
+function getAmount(item) {
+  var t=calcTotal(item); if(t==null) return null;
+  return parseFloat(t.toFixed(3));
+}
+
+function renderReport() {
+  var counted=0, ready=0;
+  ST.items.forEach(function(it){ var inv=ST.inv[it.itemId]||{}; if(inv.sealed||inv.openW){ counted++; if(getAmount(it)!=null) ready++; } });
+  var dateVal=document.getElementById('count-date').value;
+  var html='';
+  // Stats
+  html += '<div class="stat-grid">'
+    + '<div class="stat-card"><div class="stat-label">Counted</div><div class="stat-val">'+counted+'</div></div>'
+    + '<div class="stat-card"><div class="stat-label">Ready</div><div class="stat-val">'+ready+'</div></div>'
+    + '</div>';
+  // Submit button
+  html += '<button class="btn btn-primary btn-full" style="margin-bottom:14px;font-size:16px;padding:14px" onclick="submitToStoryous()">Submit to Storyous</button>';
+  // Count date
+  if(dateVal) html += '<div class="muted fs13" style="margin-bottom:12px">Count date: '+dateVal+'</div>';
+  if(!counted) {
+    html += '<div class="empty"><div class="empty-icon">📊</div><p>No items counted yet.<br>Go to Count to start.</p></div>';
+    document.getElementById('report-content').innerHTML = html; return;
+  }
+  // By category
+  var cats=allCats();
+  cats.forEach(function(cat){
+    var items=ST.items.filter(function(it){ return (it.categoryName||'Other')===cat; });
+    var rows=items.map(function(it){
+      var inv=ST.inv[it.itemId]||{};
+      var amount=getAmount(it);
+      var hasData=inv.sealed||inv.openW;
+      var sealed=hasData&&inv.sealed?(inv.sealed+(it.measure==='pc'||it.measure==='pcs'?' pc':' sealed')):'';
+      var badge=amount!=null?'<span class="badge badge-green">✓</span>':(hasData?'<span class="badge badge-amber">no config</span>':'');
+      return '<div class="report-row">'
+        + '<div><div class="report-name" style="color:'+(hasData?'var(--black)':'var(--gray-400)')+'">'+it.name+'</div>'
+        + '<div class="report-meta">'+sealed+'</div></div>'
+        + '<div class="report-val">'+(amount!=null?amount+' <span style="font-size:12px;font-weight:400;color:var(--gray-400)">'+it.measure+'</span>':'<span style="color:var(--gray-400)">—</span>')+'</div>'
+        + badge
+        + '</div>';
+    }).join('');
+    html += '<div class="section-header">'+cat+'</div><div class="card">'+rows+'</div>';
+  });
+  document.getElementById('report-content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════
+function submitToStoryous() {
+  var items=[];
+  ST.items.forEach(function(it){ var a=getAmount(it); if(a!=null) items.push({itemId:it.itemId,amount:a}); });
+  if(!items.length) { showOverlay('⚠️','Nothing to submit','Count some items first and make sure weights are configured in Products.'); return; }
+  var dateVal=document.getElementById('count-date').value||new Date().toISOString().split('T')[0];
+  var btns=document.querySelectorAll('[onclick="submitToStoryous()"]');
+  btns.forEach(function(b){ b.innerHTML='<span class="spinner"></span>'; b.disabled=true; });
+  apiPost('/stocks/'+ST.mid+'/stocks/'+ST.sid+'/stockTakings',{
+    createdAt: dateVal+'T12:00:00.000Z',
+    note: 'Submitted via Bar Inventory app',
+    items: items
+  }).then(function(){
+    btns.forEach(function(b){ b.textContent='Submit to Storyous'; b.disabled=false; });
+    showOverlay('✅','Submitted to Storyous!',items.length+' items submitted successfully. Check your Storyous stock takings to confirm.');
+  }).catch(function(e){
+    btns.forEach(function(b){ b.textContent='Submit to Storyous'; b.disabled=false; });
+    showOverlay('❌','Submission failed',e.message);
+  });
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+function renderSettings() {
+  document.getElementById('s-cid').value=ST.cid;
+  document.getElementById('s-csec').value=ST.csec;
+  document.getElementById('s-proxy').value=PROXY;
+  document.getElementById('s-merchant').textContent=ST.merchant&&ST.merchant.name?ST.merchant.name+' ('+ST.mid+')':ST.mid||'—';
+  var sel=document.getElementById('s-stock');
+  sel.innerHTML=ST.stocks.map(function(s){ return '<option value="'+s.stockId+'"'+(s.stockId===ST.sid?' selected':'')+'>'+s.name+'</option>'; }).join('');
+}
+
+function changeStock() {
+  ST.sid=document.getElementById('s-stock').value;
+  localStorage.setItem('bi_sid',ST.sid);
+  syncItems();
+}
+
+function reconnect() {
+  ST.cid=document.getElementById('s-cid').value.trim();
+  ST.csec=document.getElementById('s-csec').value.trim();
+  var p=document.getElementById('s-proxy').value.trim();
+  if(p){ PROXY=p; localStorage.setItem('bi_proxy',p); }
+  ST.token=null;
+  var btn=document.getElementById('s-reconnect-btn');
+  var status=document.getElementById('s-reconnect-status');
+  btn.innerHTML='<span class="spinner spinner-dark"></span>';
+  btn.disabled=true;
+  status.textContent='';
+  bootApp().then(function(){
+    btn.textContent='Save & reconnect'; btn.disabled=false;
+    status.textContent='✓ Connected'; status.style.color='var(--green)';
+    setTimeout(function(){ status.textContent=''; },3000);
+  }).catch(function(e){
+    btn.textContent='Save & reconnect'; btn.disabled=false;
+    status.textContent='✗ '+e.message; status.style.color='var(--red)';
+  });
+}
+
+function syncItems() {
+  var btn=document.querySelector('[onclick="syncItems()"]');
+  if(btn) { btn.textContent='Syncing...'; btn.disabled=true; }
+  fetchAllItems().then(function(){
+    if(btn) { btn.textContent='↻ Sync products from Storyous'; btn.disabled=false; }
+    if(ST.currentTab==='products') renderProducts();
+    if(ST.currentTab==='count') renderCount();
+  }).catch(function(e){
+    if(btn) { btn.textContent='↻ Sync products from Storyous'; btn.disabled=false; }
+    showOverlay('❌','Sync failed',e.message);
+  });
+}
+
+function signOut() {
+  if(!confirm('Sign out and clear all data?')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+// ═══════════════════════════════════════════
+// OVERLAY
+// ═══════════════════════════════════════════
+function showOverlay(icon,title,msg) {
+  document.getElementById('ov-icon').textContent=icon;
+  document.getElementById('ov-title').textContent=title;
+  document.getElementById('ov-msg').textContent=msg;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeOverlay() { document.getElementById('overlay').classList.remove('open'); }
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+function esc(s) { return s.replace(/'/g,"\\'"); }
+</script>
+</body>
+</html>
